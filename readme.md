@@ -15,7 +15,7 @@
    ```sh
    composer install
    
-   createw file .env copy from .env-example
+   create file .env copy from .env-example
    ```
 3. Install modbus_driver
    ```JS
