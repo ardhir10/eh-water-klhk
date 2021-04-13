@@ -1,0 +1,24 @@
+{
+  "name": "modbus_read",
+  "version": "1.0.0",
+  "description": "",
+  "main": "core.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "node server.js"
+  },
+  "author": "Ardhi Ramadhan",
+  "license": "ISC",
+  "devDependencies": {
+    "clear": "^0.1.0",
+    "cors": "^2.8.5",
+    "infinite-loop": "^0.2.2",
+    "is-online": "^9.0.0",
+    "jsmodbus": "^4.0.5",
+    "jwt-simple": "^0.5.6",
+    "mqtt": "^4.2.6",
+    "node-datetime": "^2.1.2",
+    "pg": "^8.5.1",
+    "socket.io-client": "^4.0.1"
+  }
+}
