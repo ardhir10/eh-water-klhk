@@ -294,7 +294,7 @@ class TrendingReportController extends Controller
 
     private function sumTotalizerHour($date_from, $date_to)
     {
-        $dataLogs = DB::table('logs')
+        $dataLogs = DB::table('log_reports')
             ->select(DB::raw("id,flow_meter"))
             ->where("tstamp", ">=", $date_from)
             ->where("tstamp", "<=", $date_to)
@@ -327,7 +327,7 @@ class TrendingReportController extends Controller
         $date_to = $dateafter;
 
 
-        $dataLogs = DB::table('logs')
+        $dataLogs = DB::table('log_reports')
             ->select(DB::raw("id,flow_meter"))
             ->where("tstamp", ">=", $date_from)
             ->where("tstamp", "<=", $date_to)

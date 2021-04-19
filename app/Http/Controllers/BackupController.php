@@ -6,6 +6,7 @@ use Illuminate\Http\Request;
 use App\Exports\LogsExport;
 use Maatwebsite\Excel\Facades\Excel;
 use PDF;
+use Illuminate\Support\Facades\DB;
 
 class BackupController extends Controller
 {
@@ -23,7 +24,7 @@ class BackupController extends Controller
         }elseif($request->type == 'EXCEL'){
             return Excel::download(new LogsExport($request->date_from, $request->date_to), "backup_logs_{$request->date_from}_{$request->date_to}.xlsx");
         }elseif($request->type == 'PDF'){
-            $backup = Log::where('tstamp', '>=', $request->date_from . ' 00:00:00')->where('tstamp', '<=', $request->date_to . ' 23:59:59')->get();
+            $backup = DB::table('log_reports')->where('tstamp', '>=', $request->date_from . ' 00:00:00')->where('tstamp', '<=', $request->date_to . ' 23:59:59')->get();
             $pdf = PDF::loadView('pdf.database', ['backup'=> $backup])->setPaper('letter', 'landscape');
             return $pdf->download("backup_logs_{$request->date_from}_{$request->date_to}.pdf");
         }

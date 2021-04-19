@@ -74,7 +74,7 @@ class SensorController extends Controller
     public function resetTotalizer(Request $request)
     {
         try {
-            $last_log = DB::table('logs')->orderBy('id', 'desc')->take(1)->first();
+            $last_log = DB::table('log_reports')->orderBy('id', 'desc')->take(1)->first();
 
             if (!$last_log)
                 $last_log   = 0;
@@ -100,7 +100,7 @@ class SensorController extends Controller
         }
 
         try {
-            $dataLogs = DB::table('logs')
+            $dataLogs = DB::table('log_reports')
                 ->select(DB::raw("id,flow_meter"))
                 ->where("tstamp", ">=", $date_from)
                 ->where("tstamp", "<=", $date_to)

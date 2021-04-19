@@ -50,10 +50,10 @@ io.on("connection", function (socket) {
     });
 
     socket.on('disconnect', () => {
-        clear();
-        io.to("all").emit("eh-gateway-status", {
-            'status': 'socket-disconnect'
-        });
+        // clear();
+        // io.to("all").emit("eh-gateway-status", {
+        //     'status': 'socket-disconnect'
+        // });
         console.log(from + ' : Disconnected');
     });
     socket.join("all");

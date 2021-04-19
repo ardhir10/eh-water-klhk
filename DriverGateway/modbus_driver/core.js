@@ -352,10 +352,10 @@ function ModbusRead(iterator, optns, addressList) {
                     switch (strArray[1]) {
                         case 'FloatBE':
                             // console.log(strArray[0]+ ":"+resp.response._body.valuesAsArray)
-                            // view.setInt16(0, resp.response._body.valuesAsArray[1], false);
-                            // view.setInt16(2, resp.response._body.valuesAsArray[0], false);
-                            // valuemodbus = view.getFloat32(0, false);
-                            valuemodbus = resp.response._body._valuesAsBuffer.readFloatBE();
+                            view.setInt16(0, resp.response._body.valuesAsArray[1], false);
+                            view.setInt16(2, resp.response._body.valuesAsArray[0], false);
+                            valuemodbus = view.getFloat32(0, false);
+                            // valuemodbus = resp.response._body._valuesAsBuffer.readFloatBE();
                             break;
 
                         case 'FloatLE':

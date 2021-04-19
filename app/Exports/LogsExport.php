@@ -6,9 +6,11 @@ use App\Log;
 use Maatwebsite\Excel\Concerns\FromCollection;
 use Maatwebsite\Excel\Concerns\WithCustomCsvSettings;
 use Maatwebsite\Excel\Concerns\WithHeadings;
+use Maatwebsite\Excel\Concerns\ShouldAutoSize;
 use DateTime;
+use Illuminate\Support\Facades\DB;
 
-class LogsExport implements FromCollection, WithCustomCsvSettings, WithHeadings
+class LogsExport implements FromCollection, WithCustomCsvSettings, WithHeadings, ShouldAutoSize
 {
     /**
      * @return \Illuminate\Support\Collection
@@ -30,7 +32,7 @@ class LogsExport implements FromCollection, WithCustomCsvSettings, WithHeadings
         $dateSelectAfter = new DateTime($date_now);
         $date_from = $dateSelectAfter->modify('-1 days')->format('Y-m-d H:i:s');
         $date_to = $dateSelectAfter->modify('+1 days')->format('Y-m-d H:i:s');
-        $backup = Log::where('tstamp', '>=', $date_from)->where('tstamp', '<=', $date_to)->get();
+        $backup =  DB::table('log_reports')->where('tstamp', '>=', $date_from)->where('tstamp', '<=', $date_to)->get();
         // $backup = Log::select(DB::raw('id,tstamp,ph,tss,amonia,cod, flow_meter,controller_name, (flow_meter/3600)*'.$lastData->db_log_interval))->where('tstamp', '>=', $date_from)->where('tstamp', '<=', $date_to)->get();
 
         return $backup;
