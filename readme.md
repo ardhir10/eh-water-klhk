@@ -4,6 +4,12 @@
 
 ## E+H WATER KLHK
 
+### Requirement
+
+1. Laragon (Min Version  Apache 2.4, PHP 7.2) : https://laragon.org/download/
+2. Composer (Min Version 1.10.20) : https://getcomposer.org/download/
+3. Node Js (Min Version 12.18.3) : https://nodejs.org/en/download/
+4. Posgresql (Min Version 12) : https://www.enterprisedb.com/download-postgresql-binaries
 
 ### Installation
 
@@ -29,7 +35,7 @@
    {
      "host": "localhost",
      "user": "postgres",
-     "database": "database_naeme",
+     "database": "database_name",
      "password": "password",
      "port": 5432
    }

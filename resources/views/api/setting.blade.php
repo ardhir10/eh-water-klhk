@@ -103,7 +103,7 @@
 
                             <div class="form-group">
                                 <label for="">JWT SECRET API :</label>
-                            <input type="text" name="apisecret" value="{{$api_setting->apisecret}}" class="form-control">
+                            <input type="text" name="apisecret" id="apisecret" value="{{$api_setting->apisecret}}" class="form-control">
                             </div>
 
                             {{-- <div class="form-group">
@@ -112,8 +112,8 @@
                                 </div> --}}
 
                                 <button class="btn btn-sm btn-success" type="submit">Save</button>
- 
-                          
+
+
 
                         </form>
 
@@ -122,7 +122,7 @@
                 </div><!-- card-body -->
             </div><!-- card -->
         </div>
-      
+
 
     </div>
 
@@ -153,8 +153,7 @@
 
     var route_url = '{{url("api-page")}}'
     // Datepicker
-    
-   
+
 
 </script>
 @endpush

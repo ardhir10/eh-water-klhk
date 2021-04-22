@@ -117,9 +117,15 @@
 
                                 <div class="form-group">
                                     <label for="">JWT SECRET API :</label>
-                                    <div class="input-group">
+                                    {{-- <div class="input-group">
                                         <input type="text" class="form-control" placeholder="input jwt secret"
                                             name="jwt_secret" value="{{$api_setting->jwt_secret}}">
+                                    </div> --}}
+                                    <div class="input-group mb-3">
+                                        <input type="text" class="form-control" placeholder="input jwt secret" name="jwt_secret" value="{{$api_setting->jwt_secret}}">
+                                        <div class="input-group-prepend">
+                                            <button type="button" class="btn btn-magenta" id="getapi">Get Api</button>
+                                        </div>
                                     </div>
                                 </div>
 
@@ -344,6 +350,28 @@
             }
         }])
     }
+    document.getElementById("getapi").addEventListener("click",function(event){
+        event.preventDefault();
+        window.open("http://203.166.207.50/api/klhk/secret-sensor")
+        // $.ajax({
+        //     url: 'http://203.166.207.50/api/klhk/secret-sensor',
+        //     headers: {
+        //         'Content-Type': 'application/x-www-form-urlencoded',
+        //         'Access-Control-Allow-Origin': '*'
+        //     },
+        //     type: "GET",
+        //     dataType: "json",
+        //     data: {
+        //     },
+        //     success: function (result) {
+        //         console.log(result);
+        //     },
+        //     error: function () {
+        //         console.log("error");
+        //     }
+        // });
+    })
+
 
 </script>
 @endpush
