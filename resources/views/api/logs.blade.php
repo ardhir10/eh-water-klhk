@@ -118,6 +118,9 @@
                         <div class="card-body">
                             <div class="table-responsive wd-100p">
                                 <table class="table datatable ">
+                                    <p class="tx-black" style="display: inline;">Download :</p>
+                                    <div id="buttons" style="padding: 10px; margin-bottom: 10px; width: 100%; border-radius:5px; display:inline;"></div>
+
                                     <thead>
                                         <th>no</th>
                                         <th>TSTAMP</th>
@@ -152,6 +155,13 @@
 </div><!-- br-pagebody -->
 @push('js')
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@9"></script>
+<script src="{{ asset('backend/lib/datatables/dataTables.buttons.min.js') }}"></script>
+<script src="{{ asset('backend/lib/datatables/buttons.flash.min.js') }}"></script>
+<script src="{{ asset('backend/lib/datatables/jszip.min.js') }}"></script>
+<script src="{{ asset('backend/lib/datatables/pdfmake.min.js') }}"></script>
+<script src="{{ asset('backend/lib/datatables/vfs_fonts.js') }}"></script>
+<script src="{{ asset('backend/lib/datatables/buttons.html5.min.js') }}"></script>
+<script src="{{ asset('backend/lib/datatables/buttons.print.min.js') }}"></script>
 <script>
     var table = $('.datatable').DataTable();
 
@@ -258,6 +268,44 @@
 
         }
     })
+
+    var buttons = new $.fn.dataTable.Buttons(table, {
+        buttons: [
+        //     {
+        //     extend: 'pdfHtml5',
+        //     title: 'Alarm Backup',
+        //     orientation: 'potrait',
+        //     pageSize: 'A4',
+        //     className: 'btn btn-danger btn-sm btn-corner',
+        //     text: '<i class="fas fa-file-pdf"></i>&nbsp; PDF',
+        //     titleAttr: 'Download as PDF',
+        //     customize: function (doc) {
+        //         doc.content.splice(0, 0, {
+        //             margin: [0, 0, 0, 12],
+        //             alignment: 'center',
+        //             image: getBase64Image(myGlyph),
+        //             width: 140,
+        //             height: 40,
+        //         });
+        //     }
+        // }, 
+        {
+            extend: 'excelHtml5',
+            text: '<i class="fas fa-file-excel"></i>&nbsp; EXCEL',
+            title: 'API Backup',
+            className: 'btn btn-success btn-sm btn-corner',
+            titleAttr: 'Download as Excel',
+            exportOptions: {
+                    columns: ':visible'
+                }
+        }, {
+            extend: 'csv',
+            text: '<i class="fas fa-file-csv"></i>&nbsp; CSV',
+            title: 'API Backup',
+            className: 'btn btn-info btn-sm btn-corner',
+            titleAttr: 'Download as Csv'
+        }, ],
+    }).container().appendTo($('#buttons'));
 
 </script>
 @endpush

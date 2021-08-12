@@ -23,16 +23,14 @@ class LogsExport implements FromCollection, WithCustomCsvSettings, WithHeadings,
         $this->date_to = $dateTo;
     }
     public function collection()
-    {
-        $lastData = \App\GlobalSetting::orderBy('id', 'desc')->first();
-        $jsecond = $lastData->schedule_second ?: '00';
-        $jminute = $lastData->schedule_minute ?: '00';
-        $jhour   = $lastData->schedule_hour ?: '00';
-        $date_now = $this->date_from . ' ' . $jhour . ':' . $jminute . ':' . $jsecond;
-        $dateSelectAfter = new DateTime($date_now);
-        $date_from = $dateSelectAfter->modify('-1 days')->format('Y-m-d H:i:s');
-        $date_to = $dateSelectAfter->modify('+1 days')->format('Y-m-d H:i:s');
-        $backup =  DB::table('log_reports')->where('tstamp', '>=', $date_from)->where('tstamp', '<=', $date_to)->get();
+    {$lastData = \App\GlobalSetting::orderBy('id', 'desc')->first();
+        $date_froms = $this->date_from . ' ' . '00:00:00';
+        $date_tos = $this->date_to . ' ' . '23:59:59';
+        $dateSelectAfter = new DateTime($date_tos);
+        $dateSelectBefore = new DateTime($date_froms);
+        $date_from = $dateSelectBefore->format('Y-m-d H:i:s');
+        $date_to = $dateSelectAfter->format('Y-m-d H:i:s');
+        $backup =  DB::table('log_reports')->where('tstamp', '>=', $date_from)->where('tstamp', '<=', $date_to)->orderBy('tstamp', 'asc')->get();
         // $backup = Log::select(DB::raw('id,tstamp,ph,tss,amonia,cod, flow_meter,controller_name, (flow_meter/3600)*'.$lastData->db_log_interval))->where('tstamp', '>=', $date_from)->where('tstamp', '<=', $date_to)->get();
 
         return $backup;

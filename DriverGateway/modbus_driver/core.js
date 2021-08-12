@@ -10,6 +10,10 @@ const util = require('util');
 // const exec = util.promisify(require('child_process').exec);
 var clear = require('clear');
 
+let jwt_secret_api = '';
+
+
+   
 
 // ----- GLOBAL CONFIG
 var hostWebsocket = 'http://localhost';
@@ -50,6 +54,18 @@ var view = new DataView(buffer);
 
 // ----- WEBSOCKET
 const axios = require('axios');
+
+var url = 'http://203.166.207.50/api/klhk/secret-sensor';
+  
+    axios.get(url)
+        .then(function (response) {
+            // console.log(response);
+            // ---- redeclare Tstamp 
+            jwt_secret_api = response.data;
+        })
+        .catch(function (error) {
+            console.log(error);
+        });
 
 function sendSocket(controllerData, host) {
     axios.post(host + ':' + portWebsocket + '/eh-water', controllerData)
@@ -225,9 +241,10 @@ function ModbusRead(iterator, optns, addressList) {
         // ----- GET API SETTING
         const apisetting = `SELECT * FROM api_settings ORDER BY id DESC limit 1 `;
         var apisettings = await pg.getQuery(apisetting);
+        console.log(jwt_secret_api);
         server_url = (apisettings[0].server_url == null) ? server_url : apisettings[0].server_url; //ms
         uid = (apisettings[0].uid == null) ? uid : apisettings[0].uid; //ms
-        secretapi = (apisettings[0].jwt_secret == null) ? jwt_secret : apisettings[0].jwt_secret; //ms
+        secretapi = (apisettings[0].jwt_secret == null) ? jwt_secret_api : apisettings[0].jwt_secret; //ms
         send_api_interval = (apisettings[0].send_interval == null) ? send_interval : apisettings[0].send_interval; //ms
 
         // ----- GET MAINTENANCE
@@ -330,8 +347,23 @@ function ModbusRead(iterator, optns, addressList) {
             let dt = datetime.create();
             let dateTime = dt.format('Y-m-d H:M:S');
             payloadSchedule['datetime'] = moment(dateTime).unix();
-            // ---- redeclare Tstamp 
-            sendJwt(dateTime, server_url, payloadSchedule, secretapi)
+
+            var url = 'http://203.166.207.50/api/klhk/secret-sensor';
+            
+            function getJwt() {
+                axios.get(url)
+                    .then(function (response) {
+                        // console.log(response);
+                        // ---- redeclare Tstamp 
+                        sendJwt(dateTime, server_url, payloadSchedule, response.data)
+                    })
+                    .catch(function (error) {
+                        console.log(error);
+                    });
+            };
+
+            getJwt();
+
         }.bind(null, payloadSchedule, klhkTstamp));
 
         var counter = 0;

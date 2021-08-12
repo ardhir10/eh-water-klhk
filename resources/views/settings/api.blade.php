@@ -115,19 +115,19 @@
                                     </div>
                                 </div>
 
-                                <div class="form-group">
+                                {{-- <div class="form-group">
                                     <label for="">JWT SECRET API :</label>
-                                    {{-- <div class="input-group">
+                                    <div class="input-group">
                                         <input type="text" class="form-control" placeholder="input jwt secret"
                                             name="jwt_secret" value="{{$api_setting->jwt_secret}}">
-                                    </div> --}}
+                                    </div>
                                     <div class="input-group mb-3">
                                         <input type="text" class="form-control" placeholder="input jwt secret" name="jwt_secret" value="{{$api_setting->jwt_secret}}">
                                         <div class="input-group-prepend">
                                             <button type="button" class="btn btn-magenta" id="getapi">Get Api</button>
                                         </div>
                                     </div>
-                                </div>
+                                </div> --}}
 
                                 <div class="form-group">
                                     <label for="">Send Interval :</label>
