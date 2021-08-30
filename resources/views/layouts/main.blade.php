@@ -132,7 +132,6 @@
     <script>
         socket.on('eh-water-alarm', (data) => {
             toastr.error(data.text, data.tstamp)
-
         });
 
         function deleteData(id) {

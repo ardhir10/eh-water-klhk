@@ -56,16 +56,18 @@ var view = new DataView(buffer);
 const axios = require('axios');
 
 var url = 'http://203.166.207.50/api/klhk/secret-sensor';
-  
-    axios.get(url)
-        .then(function (response) {
-            // console.log(response);
-            // ---- redeclare Tstamp 
-            jwt_secret_api = response.data;
-        })
-        .catch(function (error) {
-            console.log(error);
-        });
+jwt_secret_api = 'enaknyaapasecret';
+
+
+//     axios.get(url)
+//         .then(function (response) {
+//             // console.log(response);
+//             // ---- redeclare Tstamp 
+//             jwt_secret_api = response.data;
+//         })
+//         .catch(function (error) {
+//             console.log(error);
+//         });
 
 function sendSocket(controllerData, host) {
     axios.post(host + ':' + portWebsocket + '/eh-water', controllerData)
@@ -241,7 +243,6 @@ function ModbusRead(iterator, optns, addressList) {
         // ----- GET API SETTING
         const apisetting = `SELECT * FROM api_settings ORDER BY id DESC limit 1 `;
         var apisettings = await pg.getQuery(apisetting);
-        console.log(jwt_secret_api);
         server_url = (apisettings[0].server_url == null) ? server_url : apisettings[0].server_url; //ms
         uid = (apisettings[0].uid == null) ? uid : apisettings[0].uid; //ms
         secretapi = (apisettings[0].jwt_secret == null) ? jwt_secret_api : apisettings[0].jwt_secret; //ms
@@ -346,23 +347,46 @@ function ModbusRead(iterator, optns, addressList) {
         var sendKlhk = schedule.scheduleJob(`${klhkIntervalSecond} ${klhkIntervalMinute} * * * *`, async function (data) {
             let dt = datetime.create();
             let dateTime = dt.format('Y-m-d H:M:S');
+            payloadSchedule['jam'] = dateTime;
             payloadSchedule['datetime'] = moment(dateTime).unix();
-
             var url = 'http://203.166.207.50/api/klhk/secret-sensor';
-            
-            function getJwt() {
-                axios.get(url)
-                    .then(function (response) {
-                        // console.log(response);
-                        // ---- redeclare Tstamp 
-                        sendJwt(dateTime, server_url, payloadSchedule, response.data)
-                    })
-                    .catch(function (error) {
-                        console.log(error);
-                    });
-            };
+            // function getJwt() {
+            //     axios.get(url)
+            //         .then(function (response) {
+            //             // console.log(response);
+            //             // ---- redeclare Tstamp 
+            //             sendJwt(dateTime, server_url, payloadSchedule, response.data)
+            //         })
+            //         .catch(function (error) {
+            //             // console.log(error);
+            //             sendJwt(dateTime, server_url, payloadSchedule, secretapi)
+            //         });
+            // };
 
-            getJwt();
+            // getJwt();
+            // let secretapiDinamic = await axios.get(url);
+            // secretapiDinamic = secretapiDinamic.data
+            // console.log(secretapiDinamic)
+            
+            try {
+                let statusSendKLHK = await sendJwt(dateTime, server_url, payloadSchedule, secretapi)
+               
+                if(statusSendKLHK != true){
+                    let dataFailApiTemp = {};
+                    dataFailApiTemp['created_at'] = dateTime;
+    
+                    dataFailApiTemp['encode_payload'] = { 'token': jwt.encode(payloadSchedule.payload, secretapi) };
+                    dataFailApiTemp['decode_payload'] = payloadSchedule.payload;
+                    query.insert('fail_api_logs', dataFailApiTemp, function (res) {
+                        console.log('--->[\x1b[36mPGSQL\x1b[0m] ' + res + ' (KLHK FAIL API LOGS :' + dateTime + ')');
+                    });
+                    console.log('--->[\x1b[31mKLHK\x1b[0m] ' + "Koneksi  Mati : API TIDAK DIKIRIM !");
+                }
+            } catch (error) {
+                console.log("GAGAL KIRIM KE KLHNYA")
+                console.log(error)
+            }
+
 
         }.bind(null, payloadSchedule, klhkTstamp));
 
@@ -418,6 +442,8 @@ function ModbusRead(iterator, optns, addressList) {
             result['tstamp'] = dateTime;
             deviceRes[iterator] = result
 
+            console.log(result)
+
 
 
 
@@ -443,11 +469,11 @@ function ModbusRead(iterator, optns, addressList) {
             }
             var timestamp = moment(dateTime).unix();
             let payload = {
-                "ph": checkConsentrant(fix_val(deviceRes[iterator].ph, 2)),
+                "pH": checkConsentrant(fix_val(deviceRes[iterator].ph, 2)),
                 "tss": checkConsentrant(fix_val(deviceRes[iterator].tss, 2)),
-                "amonia": checkConsentrant(deviceRes[iterator].amonia),
+                "nh3n": checkConsentrant(deviceRes[iterator].amonia),
                 "cod": checkConsentrant(fix_val(deviceRes[iterator].cod, 2)),
-                "flow_meter": checkConsentrant(fix_val(deviceRes[iterator].flow_meter, 2)),
+                "debit": checkConsentrant(fix_val(deviceRes[iterator].flow_meter, 2)),
                 "uid": uid,
                 "datetime": timestamp,
             }
@@ -471,7 +497,7 @@ function ModbusRead(iterator, optns, addressList) {
                         // ----- Kirim Ke KLH
                         let datetimeError = errdata.created_at;
                         let payloadError = errdata.decode_payload;
-                        sendJwt(datetimeError, server_url, payloadError, secretapi)
+                        await sendJwt(datetimeError, server_url, {'datetime':datetimeError,'payload':payloadError}, secretapi)
                         // let command = exec('gammu --sendsms TEXT 082113222883 -text "' + text + '"');
                         // command.stdout.on('data', function (data) {
                         //     console.log('' + data);
@@ -506,8 +532,7 @@ function ModbusRead(iterator, optns, addressList) {
                 ];
                 dataLogs['goiot'] = dataGoiot
 
-                // ----- DEFINE KLHK
-                payloadSchedule = payload
+                
                 klhkTstamp = dateTime
                 // if (counter % send_api_interval === 0) {
                 //     // ----- KIRIM SMS
@@ -520,18 +545,16 @@ function ModbusRead(iterator, optns, addressList) {
                 // }
             } else {
                 // ----- Simpan Fail Api Logs
-                if (counter % send_api_interval === 0) {
-                    let dataFailApi = {};
-                    dataFailApi['created_at'] = dateTime;
-                    dataFailApi['encode_payload'] = encode_payload;
-                    dataFailApi['decode_payload'] = payload;
+                    // let dataFailApi = {};
+                    // dataFailApi['created_at'] = dateTime;
+                    // dataFailApi['encode_payload'] = encode_payload;
+                    // dataFailApi['decode_payload'] = payload;
 
 
-                    query.insert('fail_api_logs', dataFailApi, function (res) {
-                        console.log('--->[\x1b[36mPGSQL\x1b[0m] ' + res + ' (KLHK FAIL API LOGS :' + dateTime + ')');
-                    });
-                    console.log('--->[\x1b[31mKLHK\x1b[0m] ' + "Koneksi  Mati : API TIDAK DIKIRIM !");
-                }
+                    // query.insert('fail_api_logs', dataFailApi, function (res) {
+                    //     console.log('--->[\x1b[36mPGSQL\x1b[0m] ' + res + ' (KLHK FAIL API LOGS :' + dateTime + ')');
+                    // });
+                    // console.log('--->[\x1b[31mKLHK\x1b[0m] ' + "Koneksi  Mati : API TIDAK DIKIRIM !");
 
 
                 // --- Insert Connection Log Error
@@ -547,6 +570,8 @@ function ModbusRead(iterator, optns, addressList) {
 
             }
 
+            // ----- DEFINE KLHK
+            payloadSchedule['payload'] = payload
 
             // ----- SEND REALTIME
             // --- Realtime Websocket
@@ -592,8 +617,13 @@ function ModbusRead(iterator, optns, addressList) {
             // clear();
         }
 
-        il[iterator].add(Pooling);
-        il[iterator].setInterval(poolingInterval).run();
+
+        var realtimesend = schedule.scheduleJob(`*/5 * * * * *`, async function (data) {
+            Pooling();
+        })
+
+        // il[iterator].add(Pooling);
+        // il[iterator].setInterval(poolingInterval).run();
     })
     socket[iterator].on('error', async (err) => {
         console.log('--->[\x1b[41mDEVICE\x1b[0m] ' + "Gagal Koneksi " + optns.deviceId + ":" + err.errno)
