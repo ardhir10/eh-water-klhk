@@ -122,9 +122,9 @@
     <script>
         var hostSocket = '{{$global_setting->websocket_host}}';
         var host = window.location.protocol + "//" + window.location.host;
-        if(hostSocket.includes("localhost") || hostSocket.includes("127.0.0.1")){
-            hostSocket = host
-        }
+        // if(hostSocket.includes("localhost") || hostSocket.includes("127.0.0.1")){
+        //     hostSocket = host
+        // }
         console.log('HOST SOCKETNYA : ',hostSocket)
         const socket = io(`${hostSocket}:{{$global_setting->websocket_port}}`);
     </script>
