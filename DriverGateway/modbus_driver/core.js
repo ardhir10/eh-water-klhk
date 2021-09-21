@@ -12,6 +12,9 @@ var clear = require('clear');
 
 let jwt_secret_api = '';
 
+const envParams = require('./env.json')
+
+
 
    
 
@@ -35,6 +38,10 @@ var send_api_interval = 5; //second
 const {
     sendJwt
 } = require('./testJwt')
+
+const {
+    sendOnlimo
+} = require('./sendOnlimo')
 
 var moment = require('moment')
 
@@ -119,7 +126,7 @@ function sendAlarm(req, host) {
             // console.log(status);
         })
         .catch(function (error) {
-            console.log(error);
+            console.log(error.message);
         });
 };
 
@@ -189,7 +196,8 @@ function checkFormula(pv, formula, sp) {
 async function checkAlarm(dateTime, nilaiActual, alarmFormula, alarmSetpoint, alarmStatus, alarmId, alarmText, alarmSensor) {
     dataAlarm = {}
     nilaiActual = parseFloat(nilaiActual)
-    console.log(alarmSensor + ' : ' + nilaiActual + " " + alarmFormula + " " + alarmSetpoint)
+    // console.log('---CHECK ALARM')
+    // console.log(alarmSensor + ' : ' + nilaiActual + " " + alarmFormula + " " + alarmSetpoint)
     let isAlarm = checkFormula(nilaiActual, alarmFormula, alarmSetpoint);
     if (isAlarm) {
         if (alarmStatus != 1) {
@@ -344,7 +352,7 @@ function ModbusRead(iterator, optns, addressList) {
             klhkIntervalMinute = '*/' + send_api_interval / 60;
             klhkIntervalSecond = '00';
         }
-        var sendKlhk = schedule.scheduleJob(`${klhkIntervalSecond} ${klhkIntervalMinute} * * * *`, async function (data) {
+        var sendKlhkSchedule = schedule.scheduleJob(`${klhkIntervalSecond} ${klhkIntervalMinute} * * * *`, async function (data) {
             let dt = datetime.create();
             let dateTime = dt.format('Y-m-d H:M:S');
             payloadSchedule['jam'] = dateTime;
@@ -389,6 +397,56 @@ function ModbusRead(iterator, optns, addressList) {
 
 
         }.bind(null, payloadSchedule, klhkTstamp));
+
+
+        // --- SEND ONLIMO
+        var sendOnlimoSchedule = schedule.scheduleJob(`*/10 * * * * *`, async function (data) {
+            let dt = datetime.create();
+            let dateTimeO = dt.format('Y-m-d H:M:S');
+            if (envParams.sendOnlimo){
+                sendOnlimo(
+                    "https://ppkl.menlhk.go.id/onlimo/uji/connect/uji_data_onlimo",
+                    "Mini-Pc",
+                    "uji@endresshauserindonesia",
+                    "c7e29fe5-51f9-4a5a-8e90-a31fec9443ce",
+                    dateTimeO,
+                    payloadSchedule,
+                );
+            }
+            
+        }.bind(null, payloadSchedule, klhkTstamp));
+
+        // --- SEND ONLIMO FAIL
+        var sendOnlimoFailSchedule = schedule.scheduleJob(`*/20 * * * * *`, async function (data) {
+            
+            let statusKoneksi = await isOnline();
+            if (statusKoneksi) {
+                // ----- Kirim data onlimo yang error
+                const queryErrorOnlimo = `SELECT * FROM onlimo_fail_logs`;
+                let errorDataOnlimo = await pg.getQuery(queryErrorOnlimo);
+                // ----- Jika ada data yang error kirim klh kembali
+                if (errorDataOnlimo.length > 0) {
+                    for (const key2 in errorDataOnlimo) {
+                        let errorDBDataOnlimo = errorDataOnlimo[key2];
+                        console.log("ID FAIL", errorDBDataOnlimo.id)
+                        // ----- Kirim Ke ONLIMO
+                        let datetimeErrorOnlimo = datetime.create(errorDBDataOnlimo.created_at).format('Y-m-d H:M:S');
+                        let payloadErrorOnlimo = errorDBDataOnlimo.decode_payload;
+                        await sendOnlimo(
+                            "https://ppkl.menlhk.go.id/onlimo/uji/connect/uji_data_onlimo",
+                            "Mini-Pc",
+                            "uji@endresshauserindonesia",
+                            "c7e29fe5-51f9-4a5a-8e90-a31fec9443ce",
+                            datetimeErrorOnlimo,
+                            payloadErrorOnlimo,
+                            3
+                        );
+                        const queryDelOnlimo = `DELETE FROM onlimo_fail_logs where id = ` + errorDBDataOnlimo.id;
+                        var DeleteOnlimo = await pg.getQuery(queryDelOnlimo);
+                    }
+                }
+            } 
+        }.bind(null));
 
         var counter = 0;
         async function getData() {
@@ -442,7 +500,6 @@ function ModbusRead(iterator, optns, addressList) {
             result['tstamp'] = dateTime;
             deviceRes[iterator] = result
 
-            console.log(result)
 
 
 
@@ -471,13 +528,14 @@ function ModbusRead(iterator, optns, addressList) {
             let payload = {
                 "pH": checkConsentrant(fix_val(deviceRes[iterator].ph, 2)),
                 "tss": checkConsentrant(fix_val(deviceRes[iterator].tss, 2)),
-                "nh3n": checkConsentrant(deviceRes[iterator].amonia),
+                "nh3n": checkConsentrant(fix_val(deviceRes[iterator].amonia,2)),
                 "cod": checkConsentrant(fix_val(deviceRes[iterator].cod, 2)),
                 "debit": checkConsentrant(fix_val(deviceRes[iterator].flow_meter, 2)),
                 "uid": uid,
                 "datetime": timestamp,
             }
-            console.log('--->[\x1b[33mPAYLOAD\x1b[0m] ' + JSON.stringify(payload));
+            // console.log("--->PAYLOAD KLHK")
+            // console.log('--->[\x1b[33mPAYLOAD\x1b[0m] ' + JSON.stringify(payload));
             let token = jwt.encode(payload, secretapi);
             let encode_payload = {
                 'token': token
@@ -487,7 +545,7 @@ function ModbusRead(iterator, optns, addressList) {
             let statusKoneksi = await isOnline();
             if (statusKoneksi) {
                 let text = 'SPARING ' + uid + ' ' + dateTime + ' ' + fix_val(deviceRes[iterator].ph, 2) + ' ' + fix_val(deviceRes[iterator].cod, 2) + ' ' + fix_val(deviceRes[iterator].tss, 2) + ' ' + fix_val(deviceRes[iterator].amonia, 2) + ' ' + fix_val(deviceRes[iterator].flow_meter, 2) + ' ';
-                // ----- Kirim data yang error
+                // ----- Kirim data klhk yang error
                 const queryErrorApi = `SELECT * FROM fail_api_logs`;
                 let errorData = await pg.getQuery(queryErrorApi);
                 // ----- Jika ada data yang error kirim klh kembali
@@ -506,6 +564,8 @@ function ModbusRead(iterator, optns, addressList) {
                         var Delete = await pg.getQuery(queryDel);
                     }
                 }
+
+               
                 // ----- Define data Goiot
                 let dataGoiot = [{
                     "tag": (goiotSetting[0].ph_tag == null) ? "tagPh" : goiotSetting[0].ph_tag,
@@ -567,11 +627,12 @@ function ModbusRead(iterator, optns, addressList) {
                 //     console.log(res + ' (INSERT CONNECTION LOG ERROR :' + dateTime + ')');
                 //     process.exit();
                 // });
-
             }
-
+            
             // ----- DEFINE KLHK
+            klhkTstamp = dateTime
             payloadSchedule['payload'] = payload
+
 
             // ----- SEND REALTIME
             // --- Realtime Websocket
@@ -617,8 +678,23 @@ function ModbusRead(iterator, optns, addressList) {
             // clear();
         }
 
+        let realtimeIntervalMinute = poolingInterval / 60;
+        let realtimeIntervalSecond = poolingInterval % 60
 
-        var realtimesend = schedule.scheduleJob(`*/5 * * * * *`, async function (data) {
+        if (realtimeIntervalMinute < 1) {
+            realtimeIntervalMinute = '*';
+            if (realtimeIntervalSecond < 1) {
+                realtimeIntervalSecond = '00';
+            } else {
+                realtimeIntervalSecond = '*/' + realtimeIntervalSecond;
+            }
+        } else {
+            realtimeIntervalMinute = '*/' + poolingInterval / 60;
+            realtimeIntervalSecond = '00';
+        }
+
+
+        var realtimesend = schedule.scheduleJob(`${realtimeIntervalSecond} ${realtimeIntervalMinute} * * * *`, async function (data) {
             Pooling();
         })
 
