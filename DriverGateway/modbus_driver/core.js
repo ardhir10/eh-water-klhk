@@ -400,7 +400,7 @@ function ModbusRead(iterator, optns, addressList) {
 
 
         // --- SEND ONLIMO
-        var sendOnlimoSchedule = schedule.scheduleJob(`*/2 * * * *`, async function (data) {
+        var sendOnlimoSchedule = schedule.scheduleJob(`*/60 * * * *`, async function (data) {
             let dt = datetime.create();
             let dateTimeO = dt.format('Y-m-d H:M:S');
             if (envParams.sendOnlimo){
